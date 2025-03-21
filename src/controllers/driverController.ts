@@ -7,16 +7,61 @@ import { emailService } from '../utils/emailService';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { sendEmail } from '../utils/email';
+import multer from 'multer';
+
+// Extend Express namespace to include Multer types
+declare global {
+    namespace Express {
+        namespace Multer {
+            interface File {
+                fieldname: string;
+                originalname: string;
+                encoding: string;
+                mimetype: string;
+                size: number;
+                destination: string;
+                filename: string;
+                path: string;
+                buffer: Buffer;
+            }
+        }
+    }
+}
+
+// Define interface for multer request
+interface MulterRequest extends Request {
+    files?: {
+        [fieldname: string]: Express.Multer.File[];
+    };
+}
 
 class DriverController extends BaseController {
     // Create a new driver application
-    async createApplication(req: Request, res: Response, next: NextFunction): Promise<void> {
+    async createApplication(req: MulterRequest, res: Response, next: NextFunction): Promise<void> {
         try {
-            const driverData = req.body;
+            const applicationData = req.body;
             
-            // Create new driver application
-            const driver = new Driver(driverData);
-            await driver.save();
+            // Handle file uploads
+            const files = req.files;
+            const documents: any = {};
+
+            if (files) {
+                // Process each uploaded file
+                Object.keys(files).forEach(fieldName => {
+                    documents[fieldName] = files[fieldName][0].path;
+                });
+            }
+
+            // Add document paths to application data
+            applicationData.documents = documents;
+
+            // Set initial application status
+            applicationData.applicationStatus = {
+                status: 'pending',
+                isApproved: false
+            };
+
+            const driver = await Driver.create(applicationData);
 
             this.sendResponse(res, 201, true, 'Driver application submitted successfully', driver);
         } catch (error) {
@@ -97,7 +142,7 @@ class DriverController extends BaseController {
     }
 
     // Update driver application
-    async updateApplication(req: Request, res: Response, next: NextFunction): Promise<void> {
+    async updateApplication(req: MulterRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;
             const updateData = req.body;
@@ -105,6 +150,15 @@ class DriverController extends BaseController {
             if (!Types.ObjectId.isValid(id)) {
                 this.sendError(res, 400, 'Invalid driver ID format');
                 return;
+            }
+
+            // Handle file uploads if any
+            const files = req.files;
+            if (files) {
+                updateData.documents = updateData.documents || {};
+                Object.keys(files).forEach(fieldName => {
+                    updateData.documents[fieldName] = files[fieldName][0].path;
+                });
             }
 
             const driver = await Driver.findByIdAndUpdate(
@@ -128,30 +182,11 @@ class DriverController extends BaseController {
     async updateApplicationStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;
-            const { 
-                isReviewed,
-                isBackgroundCheckCompleted,
-                isInterviewScheduled,
-                isHired,
-                comments 
-            } = req.body;
-
-            if (!Types.ObjectId.isValid(id)) {
-                this.sendError(res, 400, 'Invalid driver ID format');
-                return;
-            }
+            const statusUpdate = req.body;
 
             const driver = await Driver.findByIdAndUpdate(
                 id,
-                {
-                    $set: {
-                        'applicationStatus.isReviewed': isReviewed,
-                        'applicationStatus.isBackgroundCheckCompleted': isBackgroundCheckCompleted,
-                        'applicationStatus.isInterviewScheduled': isInterviewScheduled,
-                        'applicationStatus.isHired': isHired,
-                        'applicationStatus.comments': comments
-                    }
-                },
+                { $set: { applicationStatus: statusUpdate } },
                 { new: true }
             );
 
@@ -181,6 +216,19 @@ class DriverController extends BaseController {
             if (!driver) {
                 this.sendError(res, 404, 'Driver application not found');
                 return;
+            }
+
+            // Delete associated files
+            if (driver.documents) {
+                Object.values(driver.documents).forEach(filePath => {
+                    if (filePath && typeof filePath === 'string') {
+                        try {
+                            require('fs').unlinkSync(filePath);
+                        } catch (err) {
+                            console.error('Error deleting file:', err);
+                        }
+                    }
+                });
             }
 
             this.sendResponse(res, 200, true, 'Driver application deleted successfully');
@@ -245,25 +293,15 @@ class DriverController extends BaseController {
     async approveApplication(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;
-            const { approvedBy } = req.body;
-
-            if (!Types.ObjectId.isValid(id)) {
-                this.sendError(res, 400, 'Invalid driver ID format');
-                return;
-            }
-
-            // Generate a random password
-            const password = crypto.randomBytes(8).toString('hex');
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const { name, comments } = req.body;
 
             const driver = await Driver.findByIdAndUpdate(
                 id,
                 {
                     $set: {
+                        'applicationStatus.status': 'approved',
                         'applicationStatus.isApproved': true,
-                        'applicationStatus.approvedAt': new Date(),
-                        'applicationStatus.approvedBy': approvedBy,
-                        password: hashedPassword
+                        'applicationStatus.comments': comments
                     }
                 },
                 { new: true }
@@ -307,6 +345,7 @@ class DriverController extends BaseController {
                 id,
                 {
                     $set: {
+                        'applicationStatus.status': 'rejected',
                         'applicationStatus.isApproved': false,
                         'applicationStatus.rejectionReason': rejectionReason
                     }

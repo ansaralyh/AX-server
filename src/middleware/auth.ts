@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import  catchAsyncErrors  from '../middleware/catchAsyncErrors';
+import User from '../models/userModel';
+import { BaseError } from '../utils/baseError';
 
-// Extend Request type to include user
+// Extend Express Request type to include user
 declare global {
     namespace Express {
         interface Request {
@@ -12,39 +13,38 @@ declare global {
 }
 
 // Verify JWT token
-export const isAuthenticated = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({
-            success: false,
-            message: 'Please login to access this resource'
-        });
-    }
-
-    const token = authHeader.split(' ')[1];
-
+export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-        req.user = decoded;
+        const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+
+        if (!token) {
+            throw new BaseError('Please login to access this resource', 401);
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
+        req.user = await User.findById(decoded.id);
+
+        if (!req.user) {
+            throw new BaseError('User not found', 401);
+        }
+
         next();
     } catch (error) {
-        return res.status(401).json({
-            success: false,
-            message: 'Invalid or expired token'
-        });
+        next(error);
     }
-});
+};
 
 // Authorize roles
 export const authorizeRoles = (...roles: string[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({
-                success: false,
-                message: `Role (${req.user.role}) is not allowed to access this resource`
-            });
+        if (!req.user) {
+            return next(new BaseError('Please login to access this resource', 401));
         }
+
+        if (!roles.includes(req.user.role)) {
+            return next(new BaseError(`Role (${req.user.role}) is not allowed to access this resource`, 403));
+        }
+
         next();
     };
 }; 

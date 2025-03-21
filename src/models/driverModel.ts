@@ -1,5 +1,13 @@
-import mongoose, { Document } from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 import bcrypt from "bcryptjs";
+
+interface IDriverDocuments {
+  cdlDocument?: string;
+  medicalCertificate?: string;
+  drivingRecord?: string;
+  socialSecurityCard?: string;
+  profilePhoto?: string;
+}
 
 // TypeScript interface for driver document
 interface IDriver extends Document {
@@ -15,7 +23,7 @@ interface IDriver extends Document {
     street: string;
     city: string;
     state: string;
-    zip: string;
+    zipCode: string;
   };
 
   // Legal Information
@@ -25,65 +33,56 @@ interface IDriver extends Document {
 
   // CDL Information
   cdl: {
-    licenseNumber: string;
-    stateIssued: string;
+    number: string;
+    state: string;
     expirationDate: Date;
-    endorsements: {
-      tanker: boolean;
-      hazmat: boolean;
-      doubleTriples: boolean;
-      other?: string;
-    };
-    yearsOfExperience: number;
   };
 
   // Employment History
-  employmentHistory: [
-    {
-      companyName: string;
-      positionHeld: string;
-      fromDate: Date;
-      toDate: Date;
-      reasonForLeaving: string;
-    }
-  ];
+  employmentHistory: Array<{
+    companyName: string;
+    position: string;
+    startDate: Date;
+    endDate?: Date;
+    reasonForLeaving?: string;
+  }>;
 
   // Driving History
   drivingHistory: {
-    hadAccidents: boolean;
-    accidentDetails?: string;
-    hadViolations: boolean;
-    violationDetails?: string;
+    accidents: Array<{
+      date: Date;
+      description: string;
+      atFault: boolean;
+    }>;
+    violations: Array<{
+      date: Date;
+      description: string;
+      points: number;
+    }>;
   };
 
   // References
-  references: [
-    {
-      name: string;
-      relationship: string;
-      phoneNumber: string;
-    }
-  ];
+  references: Array<{
+    name: string;
+    relationship: string;
+    phoneNumber: string;
+    email: string;
+  }>;
 
   // Document Uploads
-  documents: {
-    driversLicense: string; // URL/path to stored document
-    nationalIdOrPassport: string;
-    recentPhotograph: string;
-    medicalCertificate: string;
-  };
+  documents: IDriverDocuments;
 
   // Application Status
   applicationStatus: {
-    isApproved: boolean;
-    approvedAt?: Date;
-    approvedBy?: string;
-    rejectionReason?: string;
-    isReviewed: boolean;
-    isBackgroundCheckCompleted: boolean;
-    isInterviewScheduled: boolean;
-    isHired: boolean;
+    status: 'pending' | 'in_review' | 'approved' | 'rejected';
+    reviewStatus?: string;
+    backgroundCheckCompleted?: boolean;
+    interviewScheduled?: boolean;
+    interviewDate?: Date;
+    hiringStatus?: string;
     comments?: string;
+    isApproved?: boolean;
+    rejectionReason?: string;
   };
 
   // Consent
@@ -95,21 +94,50 @@ interface IDriver extends Document {
   updatedAt: Date;
 }
 
-const driverSchema = new mongoose.Schema(
+const driverSchema = new Schema<IDriver>(
   {
     // Applicant Information
-    fullName: { type: String, required: true },
-    dateOfBirth: { type: Date, required: true },
-    phoneNumber: { type: String, required: true },
-    emailAddress: { type: String, required: true, unique: true },
-    password: { type: String, select: false },
+    fullName: {
+      type: String,
+      required: [true, 'Full name is required']
+    },
+    dateOfBirth: {
+      type: Date,
+      required: [true, 'Date of birth is required']
+    },
+    phoneNumber: {
+      type: String,
+      required: [true, 'Phone number is required']
+    },
+    emailAddress: {
+      type: String,
+      required: [true, 'Email address is required'],
+      unique: true,
+      lowercase: true
+    },
+    password: {
+      type: String,
+      select: false
+    },
 
     // Current Address
     address: {
-      street: { type: String, required: true },
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      zip: { type: String, required: true },
+      street: {
+        type: String,
+        required: [true, 'Street address is required']
+      },
+      city: {
+        type: String,
+        required: [true, 'City is required']
+      },
+      state: {
+        type: String,
+        required: [true, 'State is required']
+      },
+      zipCode: {
+        type: String,
+        required: [true, 'ZIP code is required']
+      }
     },
 
     // Legal Information
@@ -119,76 +147,114 @@ const driverSchema = new mongoose.Schema(
 
     // CDL Information
     cdl: {
-      licenseNumber: { type: String, required: true },
-      stateIssued: { type: String, required: true },
-      expirationDate: { type: Date, required: true },
-      endorsements: {
-        tanker: { type: Boolean, default: false },
-        hazmat: { type: Boolean, default: false },
-        doubleTriples: { type: Boolean, default: false },
-        other: { type: String },
+      number: {
+        type: String,
+        required: [true, 'CDL number is required']
       },
-      yearsOfExperience: { type: Number, required: true },
+      state: {
+        type: String,
+        required: [true, 'CDL state is required']
+      },
+      expirationDate: {
+        type: Date,
+        required: [true, 'CDL expiration date is required']
+      }
     },
 
     // Employment History
     employmentHistory: [
       {
-        companyName: { type: String, required: true },
-        positionHeld: { type: String, required: true },
-        fromDate: { type: Date, required: true },
-        toDate: { type: Date, required: true },
-        reasonForLeaving: { type: String, required: true },
-      },
+        companyName: String,
+        position: String,
+        startDate: Date,
+        endDate: Date,
+        reasonForLeaving: String
+      }
     ],
 
     // Driving History
     drivingHistory: {
-      hadAccidents: { type: Boolean, required: true },
-      accidentDetails: { type: String },
-      hadViolations: { type: Boolean, required: true },
-      violationDetails: { type: String },
+      accidents: [
+        {
+          date: Date,
+          description: String,
+          atFault: Boolean
+        }
+      ],
+      violations: [
+        {
+          date: Date,
+          description: String,
+          points: Number
+        }
+      ]
     },
 
     // References
     references: [
       {
-        name: { type: String, required: true },
-        relationship: { type: String, required: true },
-        phoneNumber: { type: String, required: true },
-      },
+        name: String,
+        relationship: String,
+        phoneNumber: String,
+        email: String
+      }
     ],
 
     // Document Uploads
     documents: {
-      driversLicense: { type: String, required: true },
-      nationalIdOrPassport: { type: String, required: true },
-      recentPhotograph: { type: String, required: true },
-      medicalCertificate: { type: String, required: true },
+      cdlDocument: String,
+      medicalCertificate: String,
+      drivingRecord: String,
+      socialSecurityCard: String,
+      profilePhoto: String
     },
 
     // Application Status
     applicationStatus: {
-      isApproved: { type: Boolean, default: false },
-      approvedAt: { type: Date },
-      approvedBy: { type: String },
-      rejectionReason: { type: String },
-      isReviewed: { type: Boolean, default: false },
-      isBackgroundCheckCompleted: { type: Boolean, default: false },
-      isInterviewScheduled: { type: Boolean, default: false },
-      isHired: { type: Boolean, default: false },
-      comments: { type: String },
+      status: {
+        type: String,
+        enum: ['pending', 'in_review', 'approved', 'rejected'],
+        default: 'pending'
+      },
+      reviewStatus: String,
+      backgroundCheckCompleted: Boolean,
+      interviewScheduled: Boolean,
+      interviewDate: Date,
+      hiringStatus: String,
+      comments: String,
+      isApproved: {
+        type: Boolean,
+        default: false
+      },
+      rejectionReason: String
     },
 
     // Consent
-    hasAgreedToTerms: { type: Boolean, required: true },
-    signature: { type: String, required: true },
-    signatureDate: { type: Date, required: true },
+    hasAgreedToTerms: {
+      type: Boolean,
+      required: [true, 'Agreement to terms is required']
+    },
+    signature: {
+      type: String,
+      required: [true, 'Signature is required']
+    },
+    signatureDate: {
+      type: Date,
+      required: [true, 'Signature date is required']
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
+
+// Hash password before saving if modified
+driverSchema.pre('save', async function(next) {
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password!, 10);
+  }
+  next();
+});
 
 const Driver = mongoose.model<IDriver>("Driver", driverSchema);
 

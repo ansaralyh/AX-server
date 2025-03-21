@@ -1,14 +1,22 @@
 import express, { RequestHandler } from 'express';
 import driverController from '../controllers/driverController';
-import { isAuthenticated, authorizeRoles } from '../middleware/auth';
 import { validateRequest } from '../middleware/validateRequest';
 import { driverValidation } from '../validations/driverValidation';
+import { isAuthenticated, authorizeRoles } from '../middleware/auth';
+import { upload } from '../middleware/fileUpload';
 
 const router = express.Router();
 
 // Public routes
 router.post(
     '/apply',
+    upload.fields([
+        { name: 'cdlDocument', maxCount: 1 },
+        { name: 'medicalCertificate', maxCount: 1 },
+        { name: 'drivingRecord', maxCount: 1 },
+        { name: 'socialSecurityCard', maxCount: 1 },
+        { name: 'profilePhoto', maxCount: 1 }
+    ]) as RequestHandler,
     validateRequest(driverValidation.createApplication) as RequestHandler,
     driverController.createApplication as RequestHandler
 );
@@ -39,6 +47,13 @@ router.put(
     '/:id',
     isAuthenticated as RequestHandler,
     authorizeRoles('admin', 'super-admin') as RequestHandler,
+    upload.fields([
+        { name: 'cdlDocument', maxCount: 1 },
+        { name: 'medicalCertificate', maxCount: 1 },
+        { name: 'drivingRecord', maxCount: 1 },
+        { name: 'socialSecurityCard', maxCount: 1 },
+        { name: 'profilePhoto', maxCount: 1 }
+    ]) as RequestHandler,
     validateRequest(driverValidation.updateApplication) as RequestHandler,
     driverController.updateApplication as RequestHandler
 );
