@@ -7,17 +7,37 @@ import bcrypt from 'bcryptjs';
 import { config } from '../config';
 
 class AuthController extends BaseController {
+    constructor() {
+        super();
+        // Bind methods to ensure 'this' context
+        this.adminLogin = this.adminLogin.bind(this);
+        this.driverLogin = this.driverLogin.bind(this);
+        this.getProfile = this.getProfile.bind(this);
+        this.createDefaultAdmin = this.createDefaultAdmin.bind(this);
+    }
+
     async adminLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { email, password } = req.body;
+            
+            console.log('Login attempt for email:', email);
 
             const user = await User.findOne({ email }).select('+password');
             if (!user) {
+                console.log('User not found');
                 this.sendError(res, 401, 'Invalid credentials');
                 return;
             }
 
-            const isPasswordValid = await bcrypt.compare(password, user.password);
+            console.log('User found:', {
+                id: user._id,
+                email: user.email,
+                role: user.role
+            });
+
+            const isPasswordValid = await user.comparePassword(password);
+            console.log('Password valid:', isPasswordValid);
+
             if (!isPasswordValid) {
                 this.sendError(res, 401, 'Invalid credentials');
                 return;
@@ -40,6 +60,7 @@ class AuthController extends BaseController {
                 }
             });
         } catch (error) {
+            console.error('Login error:', error);
             next(error);
         }
     }
@@ -108,33 +129,45 @@ class AuthController extends BaseController {
     async createDefaultAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { secretKey } = req.body;
+            
+            // Debug logging
+            console.log('Received secretKey:', secretKey);
+            console.log('Config setupSecretKey:', config.setupSecretKey);
 
             if (secretKey !== config.setupSecretKey) {
                 this.sendError(res, 403, 'Invalid setup secret key');
                 return;
             }
 
-            const existingAdmin = await User.findOne({ role: 'super-admin' });
-            if (existingAdmin) {
-                this.sendError(res, 400, 'Default admin already exists');
-                return;
-            }
+            // First, delete any existing admin
+            await User.deleteMany({ role: 'super-admin' });
 
-            const hashedPassword = await bcrypt.hash('admin123', 10);
+            // Create new admin with known password
+            const password = 'admin123';
+            console.log('Creating admin with password:', password);
+
             const admin = await User.create({
                 email: 'admin@example.com',
-                password: hashedPassword,
+                password: password,  // Let the schema middleware hash it
                 role: 'super-admin',
                 firstName: 'Admin',
                 lastName: 'User'
             });
 
-            this.sendResponse(res, 201, true, 'Default admin created successfully', {
+            console.log('Admin created successfully:', {
                 id: admin._id,
                 email: admin.email,
                 role: admin.role
             });
+
+            this.sendResponse(res, 201, true, 'Default admin created successfully', {
+                id: admin._id,
+                email: admin.email,
+                role: admin.role,
+                message: 'Use password: admin123 to login'
+            });
         } catch (error) {
+            console.error('Error in createDefaultAdmin:', error);
             next(error);
         }
     }
