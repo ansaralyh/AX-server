@@ -1,7 +1,7 @@
 import express from "express";
 import { connectToDb } from "./config/db";
 import dotenv from "dotenv";
-import errorMiddleware from "./middlewares/error";
+import errorMiddleware from "./middleware/error";
 import bodyParser from "body-parser";
 import indexRoutes from './routes/indexRoutes'
 
