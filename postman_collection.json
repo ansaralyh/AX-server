@@ -1,0 +1,373 @@
+{
+  "info": {
+    "name": "Driver Application API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/admin/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "admin", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"admin123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Driver Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/driver/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "driver", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"driver@example.com\",\n    \"password\": \"driver123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user",
+              "host": ["{{baseUrl}}"],
+              "path": ["user"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"admin\",\n    \"phoneNumber\": \"+1234567890\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user",
+              "host": ["{{baseUrl}}"],
+              "path": ["user"]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "{{userId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"firstName\": \"John Updated\",\n    \"lastName\": \"Doe Updated\",\n    \"email\": \"john.updated@example.com\",\n    \"phoneNumber\": \"+1987654321\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "{{userId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Drivers",
+      "item": [
+        {
+          "name": "Apply as Driver",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/apply",
+              "host": ["{{baseUrl}}"],
+              "path": ["drivers", "apply"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"fullName\": \"John Driver\",\n    \"dateOfBirth\": \"1990-01-01\",\n    \"phoneNumber\": \"+1234567890\",\n    \"emailAddress\": \"driver@example.com\",\n    \"address\": {\n        \"street\": \"123 Main St\",\n        \"city\": \"New York\",\n        \"state\": \"NY\",\n        \"zipCode\": \"10001\"\n    },\n    \"cdl\": {\n        \"number\": \"CDL123456\",\n        \"state\": \"NY\",\n        \"expirationDate\": \"2025-01-01\"\n    },\n    \"employmentHistory\": [\n        {\n            \"companyName\": \"Previous Trucking Co\",\n            \"position\": \"Truck Driver\",\n            \"startDate\": \"2020-01-01\",\n            \"endDate\": \"2023-01-01\",\n            \"reasonForLeaving\": \"Better opportunity\"\n        }\n    ],\n    \"drivingHistory\": {\n        \"accidents\": [\n            {\n                \"date\": \"2022-01-01\",\n                \"description\": \"Minor fender bender\",\n                \"atFault\": false\n            }\n        ],\n        \"violations\": [\n            {\n                \"date\": \"2021-01-01\",\n                \"description\": \"Speeding ticket\",\n                \"points\": 2\n            }\n        ]\n    },\n    \"references\": [\n        {\n            \"name\": \"Jane Smith\",\n            \"relationship\": \"Former Supervisor\",\n            \"phoneNumber\": \"+1987654321\",\n            \"email\": \"jane.smith@example.com\"\n        }\n    ],\n    \"documents\": {\n        \"cdl\": \"path/to/cdl.pdf\",\n        \"medicalCertificate\": \"path/to/medical.pdf\",\n        \"drugTest\": \"path/to/drugtest.pdf\"\n    },\n    \"agreementToTerms\": true,\n    \"signature\": \"John Driver\",\n    \"signatureDate\": \"2024-03-21\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/applications",
+              "host": ["{{baseUrl}}"],
+              "path": ["drivers", "applications"]
+            }
+          }
+        },
+        {
+          "name": "Get Application by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["drivers", "applications", "{{applicationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Application",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["drivers", "applications", "{{applicationId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"phoneNumber\": \"+1987654321\",\n    \"address\": {\n        \"street\": \"456 Updated St\",\n        \"city\": \"New York\",\n        \"state\": \"NY\",\n        \"zipCode\": \"10002\"\n    }\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Application Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/applications/{{applicationId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["drivers", "applications", "{{applicationId}}", "status"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"reviewStatus\": \"in_review\",\n    \"backgroundCheckCompleted\": true,\n    \"interviewScheduled\": true,\n    \"interviewDate\": \"2024-03-25T10:00:00Z\",\n    \"hiringStatus\": \"pending\",\n    \"comments\": \"Application looks good, interview scheduled\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Approve Application",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/applications/{{applicationId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["drivers", "applications", "{{applicationId}}", "approve"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Admin User\",\n    \"comments\": \"Application approved after successful interview\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reject Application",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/applications/{{applicationId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["drivers", "applications", "{{applicationId}}", "reject"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"rejectionReason\": \"Failed background check\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Application",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["drivers", "applications", "{{applicationId}}"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "token",
+      "value": "your_jwt_token_here"
+    },
+    {
+      "key": "userId",
+      "value": "user_id_here"
+    },
+    {
+      "key": "applicationId",
+      "value": "application_id_here"
+    }
+  ]
+} 
