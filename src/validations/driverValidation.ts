@@ -5,12 +5,12 @@ const addressSchema = z.object({
     street: z.string().min(1, 'Street is required'),
     city: z.string().min(1, 'City is required'),
     state: z.string().min(1, 'State is required'),
-    zip: z.string().min(1, 'ZIP code is required')
+    zipCode: z.string().min(1, 'ZIP code is required')
 });
 
 const cdlSchema = z.object({
-    licenseNumber: z.string().min(1, 'License number is required'),
-    stateIssued: z.string().min(1, 'State issued is required'),
+    number: z.string().min(1, 'License number is required'),
+    state: z.string().min(1, 'State is required'),
     expirationDate: z.string().datetime(),
     endorsements: z.object({
         tanker: z.boolean({coerce:true}),
@@ -23,9 +23,9 @@ const cdlSchema = z.object({
 
 const employmentHistorySchema = z.object({
     companyName: z.string().min(1, 'Company name is required'),
-    positionHeld: z.string().min(1, 'Position is required'),
-    fromDate: z.string().datetime(),
-    toDate: z.string().datetime(),
+    position: z.string().min(1, 'Position is required'),
+    startDate: z.string().datetime(),
+    endDate: z.string().datetime(),
     reasonForLeaving: z.string().min(1, 'Reason for leaving is required')
 });
 
@@ -57,9 +57,9 @@ export const driverValidation = {
             }),
             references: z.array(referenceSchema).min(2, 'At least two references are required'),
             documents: z.object({
-                driversLicense: z.string().min(1, 'Driver\'s license document is required'),
-                nationalIdOrPassport: z.string().min(1, 'National ID or passport document is required'),
-                recentPhotograph: z.string().min(1, 'Recent photograph is required'),
+                cdlDocument: z.string().min(1, 'CDL document is required'),
+                socialSecurityCard: z.string().min(1, 'Social security card is required'),
+                profilePhoto: z.string().min(1, 'Profile photo is required'),
                 medicalCertificate: z.string().min(1, 'Medical certificate is required')
             }),
             hasAgreedToTerms: z.literal(true, {
