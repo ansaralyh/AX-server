@@ -40,9 +40,10 @@ class DriverController extends BaseController {
     async createApplication(req: MulterRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const applicationData = req.body;
-            
+            console.log('Body:', req.body);
             // Handle file uploads
             const files = req.files;
+            console.log('Files:', req.files);
             const documents: any = {};
 
             if (files) {

@@ -13,8 +13,8 @@ const cdlSchema = z.object({
     stateIssued: z.string().min(1, 'State issued is required'),
     expirationDate: z.string().datetime(),
     endorsements: z.object({
-        tanker: z.boolean(),
-        hazmat: z.boolean(),
+        tanker: z.boolean({coerce:true}),
+        hazmat: z.boolean({coerce:true}),
         doubleTriples: z.boolean(),
         other: z.string().optional()
     }),
@@ -44,15 +44,15 @@ export const driverValidation = {
             phoneNumber: z.string().min(1, 'Phone number is required'),
             emailAddress: z.string().email('Invalid email address'),
             address: addressSchema,
-            isLegallyAuthorized: z.boolean(),
-            hasBeenConvicted: z.boolean(),
+            isLegallyAuthorized: z.boolean({coerce:true}),
+            hasBeenConvicted: z.boolean({coerce:true}),
             convictionExplanation: z.string().optional(),
             cdl: cdlSchema,
             employmentHistory: z.array(employmentHistorySchema).min(1, 'At least one employment history entry is required'),
             drivingHistory: z.object({
-                hadAccidents: z.boolean(),
+                hadAccidents: z.boolean({coerce:true}),
                 accidentDetails: z.string().optional(),
-                hadViolations: z.boolean(),
+                hadViolations: z.boolean({coerce:true}),
                 violationDetails: z.string().optional()
             }),
             references: z.array(referenceSchema).min(2, 'At least two references are required'),
@@ -93,7 +93,7 @@ export const driverValidation = {
             isReviewed: z.boolean().optional(),
             isBackgroundCheckCompleted: z.boolean().optional(),
             isInterviewScheduled: z.boolean().optional(),
-            isHired: z.boolean().optional(),
+            isHired: z.boolean({coerce:true}).optional(),
             comments: z.string().optional()
         })
     }),
