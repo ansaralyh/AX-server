@@ -11,11 +11,11 @@ const router = express.Router();
 router.post(
     '/apply',
     upload.fields([
-        { name: 'cdlDocument', maxCount: 1 },
-        { name: 'medicalCertificate', maxCount: 1 },
-        { name: 'drivingRecord', maxCount: 1 },
-        { name: 'socialSecurityCard', maxCount: 1 },
-        { name: 'profilePhoto', maxCount: 1 }
+        { name: 'documents[cdlDocument]', maxCount: 1 },
+        { name: 'documents[medicalCertificate]', maxCount: 1 },
+        { name: 'documents[drivingRecord]', maxCount: 1 },
+        { name: 'documents[socialSecurityCard]', maxCount: 1 },
+        { name: 'documents[profilePhoto]', maxCount: 1 }
     ]) as RequestHandler,
     validateRequest(driverValidation.createApplication) as RequestHandler,
     driverController.createApplication as RequestHandler

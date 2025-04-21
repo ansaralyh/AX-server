@@ -37,6 +37,10 @@ interface MulterRequest extends Request {
 
 class DriverController extends BaseController {
     // Create a new driver application
+    constructor() {
+        super();
+        this.createApplication = this.createApplication.bind(this);
+    }
     async createApplication(req: MulterRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const applicationData = req.body;

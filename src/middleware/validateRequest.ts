@@ -3,7 +3,7 @@ import { AnyZodObject, ZodError } from 'zod';
 
 export const validateRequest = (schema: AnyZodObject) => {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        console.log('Inside validate request')
+        console.log('Inside validate request', req.body)
         try {
             await schema.parseAsync({
                 body: req.body,
