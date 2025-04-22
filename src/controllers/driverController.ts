@@ -8,6 +8,8 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { sendEmail } from '../utils/email';
 import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 // Extend Express namespace to include Multer types
 declare global {
@@ -40,16 +42,20 @@ class DriverController extends BaseController {
     async createApplication(req: MulterRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const applicationData = req.body;
-            console.log('Body:', req.body);
+            
             // Handle file uploads
             const files = req.files;
-            console.log('Files:', req.files);
             const documents: any = {};
 
             if (files) {
                 // Process each uploaded file
                 Object.keys(files).forEach(fieldName => {
-                    documents[fieldName] = files[fieldName][0].path;
+                    const file = files[fieldName][0];
+                    if (file) {
+                        // Store the relative path in the documents object
+                        const relativePath = path.relative(process.cwd(), file.path);
+                        documents[fieldName] = relativePath;
+                    }
                 });
             }
 
@@ -62,10 +68,23 @@ class DriverController extends BaseController {
                 isApproved: false
             };
 
+            // Create the driver application
             const driver = await Driver.create(applicationData);
 
             this.sendResponse(res, 201, true, 'Driver application submitted successfully', driver);
         } catch (error) {
+            // If there's an error, clean up any uploaded files
+            if (req.files) {
+                Object.values(req.files).forEach(fileArray => {
+                    fileArray.forEach(file => {
+                        try {
+                            fs.unlinkSync(file.path);
+                        } catch (err) {
+                            console.error('Error cleaning up file:', err);
+                        }
+                    });
+                });
+            }
             next(error);
         }
     }

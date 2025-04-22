@@ -6,11 +6,17 @@ import fs from 'fs';
 const uploadsDir = path.join(process.cwd(), 'uploads');
 const driverDocsDir = path.join(uploadsDir, 'driver-documents');
 
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
-}
-if (!fs.existsSync(driverDocsDir)) {
-    fs.mkdirSync(driverDocsDir);
+// Ensure directories exist with proper permissions
+try {
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    if (!fs.existsSync(driverDocsDir)) {
+        fs.mkdirSync(driverDocsDir, { recursive: true });
+    }
+} catch (error) {
+    console.error('Error creating upload directories:', error);
+    throw error;
 }
 
 // Configure storage
@@ -20,7 +26,8 @@ const storage = multer.diskStorage({
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+        const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(sanitizedFilename));
     }
 });
 
