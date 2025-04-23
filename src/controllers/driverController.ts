@@ -724,9 +724,17 @@ The Team
         return;
       }
 
-      const driver = await Driver.findById(id)
+      // First try to find driver by ID
+      let driver = await Driver.findById(id)
         .select('-password -documents -signature')
         .populate('userId', 'email role');
+
+      // If not found by ID, try to find by userId
+      if (!driver) {
+        driver = await Driver.findOne({ userId: id })
+          .select('-password -documents -signature')
+          .populate('userId', 'email role');
+      }
 
       if (!driver) {
         this.sendError(res, 404, 'Driver not found');
