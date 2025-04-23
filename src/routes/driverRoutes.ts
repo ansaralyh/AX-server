@@ -82,13 +82,6 @@ router.put(
     driverController.rejectApplication as RequestHandler
 );
 
-router.put(
-    '/:id/change-status',
-    isAuthenticated as RequestHandler,
-    authorizeRoles('admin', 'super-admin') as RequestHandler,
-    driverController.changeApplicationStatus as RequestHandler
-);
-
 router.delete(
     '/:id',
     isAuthenticated as RequestHandler,

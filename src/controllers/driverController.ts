@@ -397,30 +397,58 @@ class DriverController extends BaseController {
   ): Promise<void> {
     try {
       const { id } = req.params;
-      const { name, comments } = req.body;
+      const { approvedBy } = req.body;
 
-      const driver = await Driver.findByIdAndUpdate(
-        id,
-        {
-          $set: {
-            "applicationStatus.status": "approved",
-            "applicationStatus.isApproved": true,
-            "applicationStatus.comments": comments,
-          },
-        },
-        { new: true }
-      );
-
+      const driver = await Driver.findById(id);
       if (!driver) {
         this.sendError(res, 404, "Driver application not found");
         return;
       }
 
+      // Check if user already exists with this email
+      const existingUser = await User.findOne({ email: driver.emailAddress });
+      if (existingUser) {
+        this.sendError(res, 400, "A user account already exists with this email");
+        return;
+      }
+
+      // Generate a random password
+      const generatedPassword = this.generateRandomPassword();
+
+      // Create new user account
+      const userAccount = await User.create({
+        email: driver.emailAddress,
+        password: generatedPassword,
+        firstName: driver.fullName.split(" ")[0],
+        lastName: driver.fullName.split(" ").slice(1).join(" "),
+        role: "driver",
+        phoneNumber: driver.phoneNumber,
+      }) as { _id: Types.ObjectId; email: string; role: string };
+
+      // Update driver status and link to user account
+      driver.applicationStatus.status = "approved";
+      driver.applicationStatus.isApproved = true;
+      driver.userId = userAccount._id;
+      await driver.save();
+
       // Send approval email with credentials
       await sendEmail({
         to: driver.emailAddress,
-        subject: "Driver Application Approved",
-        text: `Dear ${driver.fullName},\n\nYour driver application has been approved. You can now log in to your account.\n\nBest regards,\nThe Team`,
+        subject: "Driver Application Approved - Your Login Credentials",
+        text: `
+Dear ${driver.fullName},
+
+Congratulations! Your driver application has been approved. 
+
+Here are your login credentials:
+Email: ${driver.emailAddress}
+Password: ${generatedPassword}
+
+Please log in and change your password immediately for security purposes.
+
+Best regards,
+The Team
+        `
       });
 
       this.sendResponse(
@@ -428,7 +456,14 @@ class DriverController extends BaseController {
         200,
         true,
         "Application approved and credentials sent to driver",
-        driver
+        {
+          driver,
+          userAccount: {
+            id: userAccount._id,
+            email: userAccount.email,
+            role: userAccount.role,
+          },
+        }
       );
     } catch (error) {
       next(error);
@@ -445,38 +480,34 @@ class DriverController extends BaseController {
       const { id } = req.params;
       const { rejectionReason } = req.body;
 
-      if (!Types.ObjectId.isValid(id)) {
-        this.sendError(res, 400, "Invalid driver ID format");
-        return;
-      }
-
-      if (!rejectionReason) {
-        this.sendError(res, 400, "Rejection reason is required");
-        return;
-      }
-
-      const driver = await Driver.findByIdAndUpdate(
-        id,
-        {
-          $set: {
-            "applicationStatus.status": "rejected",
-            "applicationStatus.isApproved": false,
-            "applicationStatus.rejectionReason": rejectionReason,
-          },
-        },
-        { new: true }
-      );
-
+      const driver = await Driver.findById(id);
       if (!driver) {
         this.sendError(res, 404, "Driver application not found");
         return;
       }
 
+      // Update driver status
+      driver.applicationStatus.status = "rejected";
+      driver.applicationStatus.isApproved = false;
+      driver.applicationStatus.rejectionReason = rejectionReason;
+      await driver.save();
+
       // Send rejection email
       await sendEmail({
         to: driver.emailAddress,
         subject: "Driver Application Rejected",
-        text: `Dear ${driver.fullName},\n\nWe regret to inform you that your driver application has been rejected.\nReason: ${rejectionReason}\n\nBest regards,\nThe Team`,
+        text: `
+Dear ${driver.fullName},
+
+We regret to inform you that your driver application has been rejected.
+
+Reason: ${rejectionReason}
+
+If you have any questions, please feel free to contact us.
+
+Best regards,
+The Team
+        `
       });
 
       this.sendResponse(
@@ -491,10 +522,16 @@ class DriverController extends BaseController {
     }
   }
 
-  // Helper method to generate a random password
+  // Helper method to generate random password
   private generateRandomPassword(): string {
-    // Generate a password with 8 characters including letters and numbers
-    return crypto.randomBytes(4).toString("hex");
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      password += charset[randomIndex];
+    }
+    return password;
   }
 
   // New method for changing application status
@@ -557,10 +594,10 @@ class DriverController extends BaseController {
           lastName: driver.fullName.split(" ").slice(1).join(" "),
           role: "driver",
           phoneNumber: driver.phoneNumber,
-        });
+        }) as { _id: Types.ObjectId; email: string; role: string };
 
         // Update driver with user reference
-        driver.userId = userAccount._id as Types.ObjectId;
+        driver.userId = userAccount._id;
 
         // Send credentials email
         await sendEmail({
