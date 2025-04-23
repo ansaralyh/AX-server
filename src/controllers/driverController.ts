@@ -424,7 +424,7 @@ class DriverController extends BaseController {
         role: "driver",
         phoneNumber: driver.phoneNumber,
       }) as { _id: Types.ObjectId; email: string; role: string };
-
+console.log('approved user',userAccount)
       // Update driver status and link to user account
       driver.applicationStatus.status = "approved";
       driver.applicationStatus.isApproved = true;
@@ -432,24 +432,24 @@ class DriverController extends BaseController {
       await driver.save();
 
       // Send approval email with credentials
-      await sendEmail({
-        to: driver.emailAddress,
-        subject: "Driver Application Approved - Your Login Credentials",
-        text: `
-Dear ${driver.fullName},
+//       await sendEmail({
+//         to: driver.emailAddress,
+//         subject: "Driver Application Approved - Your Login Credentials",
+//         text: `
+// Dear ${driver.fullName},
 
-Congratulations! Your driver application has been approved. 
+// Congratulations! Your driver application has been approved. 
 
-Here are your login credentials:
-Email: ${driver.emailAddress}
-Password: ${generatedPassword}
+// Here are your login credentials:
+// Email: ${driver.emailAddress}
+// Password: ${generatedPassword}
 
-Please log in and change your password immediately for security purposes.
+// Please log in and change your password immediately for security purposes.
 
-Best regards,
-The Team
-        `
-      });
+// Best regards,
+// The Team
+//         `
+//       });
 
       this.sendResponse(
         res,
@@ -493,22 +493,22 @@ The Team
       await driver.save();
 
       // Send rejection email
-      await sendEmail({
-        to: driver.emailAddress,
-        subject: "Driver Application Rejected",
-        text: `
-Dear ${driver.fullName},
+//       await sendEmail({
+//         to: driver.emailAddress,
+//         subject: "Driver Application Rejected",
+//         text: `
+// Dear ${driver.fullName},
 
-We regret to inform you that your driver application has been rejected.
+// We regret to inform you that your driver application has been rejected.
 
-Reason: ${rejectionReason}
+// Reason: ${rejectionReason}
 
-If you have any questions, please feel free to contact us.
+// If you have any questions, please feel free to contact us.
 
-Best regards,
-The Team
-        `
-      });
+// Best regards,
+// The Team
+//         `
+//       });
 
       this.sendResponse(
         res,
@@ -531,6 +531,7 @@ The Team
       const randomIndex = Math.floor(Math.random() * charset.length);
       password += charset[randomIndex];
     }
+    console.log("password", password)
     return password;
   }
 
