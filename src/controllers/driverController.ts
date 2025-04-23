@@ -52,6 +52,8 @@ class DriverController extends BaseController {
     this.approveApplication = this.approveApplication.bind(this);
     this.rejectApplication = this.rejectApplication.bind(this);
     this.changeApplicationStatus = this.changeApplicationStatus.bind(this);
+    this.getAllDrivers = this.getAllDrivers.bind(this);
+    this.getDriverById = this.getDriverById.bind(this);
   }
   async createApplication(
     req: MulterRequest,
@@ -408,7 +410,11 @@ class DriverController extends BaseController {
       // Check if user already exists with this email
       const existingUser = await User.findOne({ email: driver.emailAddress });
       if (existingUser) {
-        this.sendError(res, 400, "A user account already exists with this email");
+        this.sendError(
+          res,
+          400,
+          "A user account already exists with this email"
+        );
         return;
       }
 
@@ -416,14 +422,14 @@ class DriverController extends BaseController {
       const generatedPassword = this.generateRandomPassword();
 
       // Create new user account
-      const userAccount = await User.create({
+      const userAccount = (await User.create({
         email: driver.emailAddress,
         password: generatedPassword,
         firstName: driver.fullName.split(" ")[0],
         lastName: driver.fullName.split(" ").slice(1).join(" "),
         role: "driver",
         phoneNumber: driver.phoneNumber,
-      }) as { _id: Types.ObjectId; email: string; role: string };
+      })) as { _id: Types.ObjectId; email: string; role: string };
 
       // Update driver status and link to user account
       driver.applicationStatus.status = "approved";
@@ -448,7 +454,7 @@ Please log in and change your password immediately for security purposes.
 
 Best regards,
 The Team
-        `
+        `,
       });
 
       this.sendResponse(
@@ -507,7 +513,7 @@ If you have any questions, please feel free to contact us.
 
 Best regards,
 The Team
-        `
+        `,
       });
 
       this.sendResponse(
@@ -525,7 +531,8 @@ The Team
   // Helper method to generate random password
   private generateRandomPassword(): string {
     const length = 12;
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    const charset =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
     let password = "";
     for (let i = 0; i < length; i++) {
       const randomIndex = Math.floor(Math.random() * charset.length);
@@ -587,14 +594,14 @@ The Team
         generatedPassword = this.generateRandomPassword();
 
         // Create new user account
-        userAccount = await User.create({
+        userAccount = (await User.create({
           email: driver.emailAddress,
           password: generatedPassword,
           firstName: driver.fullName.split(" ")[0],
           lastName: driver.fullName.split(" ").slice(1).join(" "),
           role: "driver",
           phoneNumber: driver.phoneNumber,
-        }) as { _id: Types.ObjectId; email: string; role: string };
+        })) as { _id: Types.ObjectId; email: string; role: string };
 
         // Update driver with user reference
         driver.userId = userAccount._id;
@@ -616,7 +623,7 @@ Please log in and change your password immediately for security purposes.
 
 Best regards,
 The Team
-          `
+          `,
         });
       }
 
@@ -648,6 +655,80 @@ The Team
           }),
         }
       );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAllDrivers(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { page = 1, limit = 10, search } = req.query;
+      const query: any = { 'applicationStatus.status': 'approved' };
+
+      // Add search functionality
+      if (search) {
+        query.$or = [
+          { fullName: { $regex: search, $options: 'i' } },
+          { emailAddress: { $regex: search, $options: 'i' } },
+          { phoneNumber: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      const options = {
+        page: Number(page),
+        limit: Number(limit),
+        sort: { createdAt: -1 }
+      };
+
+      const drivers = await Driver.find(query)
+        .skip((options.page - 1) * options.limit)
+        .limit(options.limit)
+        .select('-password -documents -signature')
+        .populate('userId', 'email role');
+
+      const total = await Driver.countDocuments(query);
+
+      this.sendResponse(res, 200, true, 'Drivers retrieved successfully', {
+        drivers,
+        pagination: {
+          currentPage: options.page,
+          totalPages: Math.ceil(total / options.limit),
+          totalRecords: total,
+          recordsPerPage: options.limit
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getDriverById(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      if (!Types.ObjectId.isValid(id)) {
+        this.sendError(res, 400, 'Invalid driver ID format');
+        return;
+      }
+
+      const driver = await Driver.findById(id)
+        .select('-password -documents -signature')
+        .populate('userId', 'email role');
+
+      if (!driver) {
+        this.sendError(res, 404, 'Driver not found');
+        return;
+      }
+
+      this.sendResponse(res, 200, true, 'Driver retrieved successfully', driver);
     } catch (error) {
       next(error);
     }
