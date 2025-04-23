@@ -204,11 +204,11 @@ const driverSchema = new Schema<IDriver>(
 
     // Document Uploads
     documents: {
-      "document[cdlDocument]": String,
-      "document[medicalCertificate]": String,
-      "document[drivingRecord]": String,
-      "document[socialSecurityCard]": String,
-      "document[profilePhoto]": String
+      cdlDocument: String,
+      medicalCertificate: String,
+      drivingRecord: String,
+      socialSecurityCard: String,
+      profilePhoto: String
     },
 
     // Application Status
