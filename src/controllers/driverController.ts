@@ -41,8 +41,17 @@ class DriverController extends BaseController {
   // Create a new driver application
   constructor() {
     super();
+    // Bind all methods that are used as route handlers
     this.createApplication = this.createApplication.bind(this);
-  }
+    this.getAllApplications = this.getAllApplications.bind(this);
+    this.getApplicationById = this.getApplicationById.bind(this);
+    this.updateApplication = this.updateApplication.bind(this);
+    this.updateApplicationStatus = this.updateApplicationStatus.bind(this);
+    this.deleteApplication = this.deleteApplication.bind(this);
+    this.searchDrivers = this.searchDrivers.bind(this);
+    this.approveApplication = this.approveApplication.bind(this);
+    this.rejectApplication = this.rejectApplication.bind(this);
+  }
   async createApplication(
     req: MulterRequest,
     res: Response,
