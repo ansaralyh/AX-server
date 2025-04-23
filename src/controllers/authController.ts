@@ -20,7 +20,7 @@ class AuthController extends BaseController {
         try {
             const { email, password } = req.body;
             
-            console.log('Login attempt for email:', email);
+            // console.log('Login attempt for email:', email);
 
             const user = await User.findOne({ email }).select('+password');
             if (!user) {
@@ -48,7 +48,6 @@ class AuthController extends BaseController {
                 config.jwtSecret,
                 { expiresIn: '24h' }
             );
-
             this.sendResponse(res, 200, true, 'Login successful', {
                 token,
                 user: {
@@ -171,6 +170,27 @@ class AuthController extends BaseController {
             next(error);
         }
     }
+
+    async adminLogout(req: Request, res: Response): Promise<void> {
+        try {
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: false, // change to true in production
+                sameSite: 'lax',
+            });
+    
+            res.status(200).json({
+                message: 'Logout successful',
+            });
+        } catch (error) {
+            console.error("Logout error:", error);
+            res.status(500).json({
+                message: 'Internal server error',
+            });
+        }
+    }
+    
+    
 }
 
 export default new AuthController(); 

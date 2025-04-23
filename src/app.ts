@@ -5,6 +5,7 @@ import errorMiddleware from "./middleware/error";
 import bodyParser from "body-parser";
 import indexRoutes from './routes/indexRoutes'
 import cors from 'cors';
+import cookieParser from "cookie-parser";
 
 //Dotenv configuration
 dotenv.config();
@@ -25,6 +26,7 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json())
+app.use(cookieParser());
 // Security headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');

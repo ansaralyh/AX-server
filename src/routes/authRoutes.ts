@@ -12,6 +12,7 @@ router.post(
     validateRequest(authValidation.login),
     authController.adminLogin
 );
+router.post('/admin/logout', authController.adminLogout);
 
 router.post(
     '/driver/login',

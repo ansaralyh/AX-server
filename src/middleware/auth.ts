@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel';
 import { BaseError } from '../utils/baseError';
+import { config } from '../config';  // Import config
 
 // Extend Express Request type to include user
 declare global {
@@ -21,7 +22,8 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
             throw new BaseError('Please login to access this resource', 401);
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
+        // Use config.jwtSecret for verification
+        const decoded = jwt.verify(token, config.jwtSecret) as { id: string };
         req.user = await User.findById(decoded.id);
 
         if (!req.user) {
@@ -47,4 +49,4 @@ export const authorizeRoles = (...roles: string[]) => {
 
         next();
     };
-}; 
+};
