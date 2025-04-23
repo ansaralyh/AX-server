@@ -422,14 +422,14 @@ class DriverController extends BaseController {
       const generatedPassword = this.generateRandomPassword();
 
       // Create new user account
-      const userAccount = (await User.create({
+      const userAccount = await User.create({
         email: driver.emailAddress,
         password: generatedPassword,
         firstName: driver.fullName.split(" ")[0],
         lastName: driver.fullName.split(" ").slice(1).join(" "),
         role: "driver",
         phoneNumber: driver.phoneNumber,
-      })) as { _id: Types.ObjectId; email: string; role: string };
+      }) as { _id: Types.ObjectId; email: string; role: string };
 
       // Update driver status and link to user account
       driver.applicationStatus.status = "approved";
@@ -725,7 +725,7 @@ The Team
       }
 
       const driver = await Driver.findById(id)
-        .select('-password  -signature')
+        .select('-password -documents -signature')
         .populate('userId', 'email role');
 
       if (!driver) {
