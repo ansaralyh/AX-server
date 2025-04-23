@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Schema, Types } from "mongoose";
 import bcrypt from "bcryptjs";
 
 interface IDriverDocuments {
@@ -89,6 +89,8 @@ interface IDriver extends Document {
   hasAgreedToTerms: boolean;
   signature: string;
   signatureDate: Date;
+
+  userId?: Types.ObjectId;
 
   createdAt: Date;
   updatedAt: Date;
@@ -241,6 +243,13 @@ const driverSchema = new Schema<IDriver>(
     signatureDate: {
       type: Date,
       required: [true, 'Signature date is required']
+    },
+
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      unique: true,
+      sparse: true
     }
   },
   {

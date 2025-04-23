@@ -10,6 +10,7 @@ import { sendEmail } from "../utils/email";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import User from "../models/userModel";
 
 // Extend Express namespace to include Multer types
 declare global {
@@ -38,11 +39,23 @@ interface MulterRequest extends Request {
 }
 
 class DriverController extends BaseController {
-  // Create a new driver application
   constructor() {
     super();
+    // Bind all methods that are used as route handlers
     this.createApplication = this.createApplication.bind(this);
+    this.getAllApplications = this.getAllApplications.bind(this);
+    this.getApplicationById = this.getApplicationById.bind(this);
+    this.updateApplication = this.updateApplication.bind(this);
+    this.updateApplicationStatus = this.updateApplicationStatus.bind(this);
+    this.deleteApplication = this.deleteApplication.bind(this);
+    this.searchDrivers = this.searchDrivers.bind(this);
+    this.approveApplication = this.approveApplication.bind(this);
+    this.rejectApplication = this.rejectApplication.bind(this);
+    this.changeApplicationStatus = this.changeApplicationStatus.bind(this); // Add new method binding
   }
+
+  // Create a new driver application
+
   async createApplication(
     req: MulterRequest,
     res: Response,
@@ -475,6 +488,148 @@ class DriverController extends BaseController {
         true,
         "Application rejected and notification sent to driver",
         driver
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Helper method to generate a random password
+  private generateRandomPassword(): string {
+    // Generate a password with 8 characters including letters and numbers
+    return crypto.randomBytes(4).toString("hex");
+  }
+
+  // New method for changing application status
+  async changeApplicationStatus(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      // Validate status
+      const validStatuses = ["pending", "in_review", "approved", "rejected"];
+      if (!validStatuses.includes(status)) {
+        this.sendError(
+          res,
+          400,
+          "Invalid status. Must be one of: pending, in_review, approved, rejected"
+        );
+        return;
+      }
+
+      // Validate ID
+      if (!Types.ObjectId.isValid(id)) {
+        this.sendError(res, 400, "Invalid driver ID format");
+        return;
+      }
+
+      const driver = await Driver.findById(id);
+      if (!driver) {
+        this.sendError(res, 404, "Driver application not found");
+        return;
+      }
+
+      let userAccount = null;
+      let generatedPassword = "";
+
+      // If status is being changed to approved, create user account
+      if (status === "approved") {
+        // Check if user already exists with this email
+        const existingUser = await User.findOne({ email: driver.emailAddress });
+        if (existingUser) {
+          this.sendError(
+            res,
+            400,
+            "A user account already exists with this email"
+          );
+          return;
+        }
+
+        // Generate password for new user
+        generatedPassword = this.generateRandomPassword();
+
+        // Create new user account
+        userAccount = await User.create({
+          email: driver.emailAddress,
+          password: generatedPassword, 
+          firstName: driver.fullName.split(" ")[0],
+          lastName: driver.fullName.split(" ").slice(1).join(" "),
+          role: "driver",
+          phoneNumber: driver.phoneNumber,
+        });
+
+        // Update driver with user reference
+        driver.userId = userAccount._id as Types.ObjectId;
+      }
+
+      // Update driver status
+      driver.applicationStatus.status = status;
+      driver.applicationStatus.isApproved = status === "approved";
+      driver.applicationStatus.comments =
+        status === "approved"
+          ? "Application approved"
+          : status === "rejected"
+          ? "Application rejected"
+          : driver.applicationStatus.comments;
+
+      await driver.save();
+
+      // Send appropriate email notification
+      if (status === "approved") {
+        // Send credentials email
+        await sendEmail({
+          to: driver.emailAddress,
+          subject: "Driver Application Approved - Your Login Credentials",
+          text: `
+Dear ${driver.fullName},
+
+Congratulations! Your driver application has been approved. 
+
+Here are your login credentials:
+Email: ${driver.emailAddress}
+Password: ${generatedPassword}
+
+Please log in and change your password immediately for security purposes.
+
+Best regards,
+The Team
+          `,
+        });
+      } else if (status === "rejected") {
+        // Send rejection email
+        await sendEmail({
+          to: driver.emailAddress,
+          subject: "Driver Application Status Update",
+          text: `
+Dear ${driver.fullName},
+
+We regret to inform you that your driver application has been rejected.
+
+Best regards,
+The Team
+          `,
+        });
+      }
+
+      this.sendResponse(
+        res,
+        200,
+        true,
+        `Application status updated to ${status} successfully`,
+        {
+          driver,
+          ...(userAccount && {
+            userAccount: {
+              id: userAccount._id,
+              email: userAccount.email,
+              role: userAccount.role,
+            },
+          }),
+        }
       );
     } catch (error) {
       next(error);
