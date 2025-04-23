@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel';
+import Driver from '../models/driverModel';
 import { BaseError } from '../utils/baseError';
 import { config } from '../config';  // Import config
 
@@ -22,13 +23,20 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
             throw new BaseError('Please login to access this resource', 401);
         }
 
-        // Use config.jwtSecret for verification
-        const decoded = jwt.verify(token, config.jwtSecret) as { id: string };
-        req.user = await User.findById(decoded.id);
+        const decoded = jwt.verify(token, config.jwtSecret) as { id: string; role: string };
+        
+        if (decoded.role === 'driver') {
+            req.user = await Driver.findById(decoded.id);
+        } else {
+            req.user = await User.findById(decoded.id);
+        }
 
         if (!req.user) {
             throw new BaseError('User not found', 401);
         }
+
+        // Add role to user object for authorization
+        req.user.role = decoded.role;
 
         next();
     } catch (error) {

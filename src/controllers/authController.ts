@@ -5,6 +5,7 @@ import Driver from '../models/driverModel';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { config } from '../config';
+import { BaseError } from '../utils/baseError';
 
 class AuthController extends BaseController {
     constructor() {
@@ -68,35 +69,52 @@ class AuthController extends BaseController {
         try {
             const { email, password } = req.body;
 
-            const driver = await Driver.findOne({ 
-                emailAddress: email,
-                'applicationStatus.isApproved': true 
-            }).select('+password');
-
-            if (!driver || !driver.password) {
-                this.sendError(res, 401, 'Invalid credentials or application not approved');
-                return;
+            // Find driver by email
+            const driver = await Driver.findOne({ email });
+            if (!driver) {
+                throw new BaseError('Invalid credentials', 401);
             }
 
-            const isPasswordValid = await bcrypt.compare(password, driver.password);
+            // Check if driver is approved
+            if (driver.applicationStatus !== 'approved') {
+                throw new BaseError('Your application is not yet approved', 403);
+            }
+
+            // Find associated user account
+            const user = await User.findOne({ email });
+            if (!user) {
+                throw new BaseError('User account not found', 401);
+            }
+
+            // Verify password
+            const isPasswordValid = await user.comparePassword(password);
             if (!isPasswordValid) {
-                this.sendError(res, 401, 'Invalid credentials');
-                return;
+                throw new BaseError('Invalid credentials', 401);
             }
 
+            // Generate JWT token
             const token = jwt.sign(
                 { id: driver._id, role: 'driver' },
                 config.jwtSecret,
-                { expiresIn: '24h' }
+                { expiresIn: '7d' }
             );
 
-            this.sendResponse(res, 200, true, 'Login successful', {
+            // Set cookie
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
+
+            res.status(200).json({
+                success: true,
                 token,
                 driver: {
-                    id: driver._id,
-                    email: driver.emailAddress,
-                    fullName: driver.fullName,
-                    role: 'driver'
+                    _id: driver._id,
+                    name: driver.name,
+                    email: driver.email,
+                    phone: driver.phone,
+                    applicationStatus: driver.applicationStatus
                 }
             });
         } catch (error) {

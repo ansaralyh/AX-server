@@ -51,7 +51,8 @@ class DriverController extends BaseController {
     this.searchDrivers = this.searchDrivers.bind(this);
     this.approveApplication = this.approveApplication.bind(this);
     this.rejectApplication = this.rejectApplication.bind(this);
-  }
+    this.changeApplicationStatus = this.changeApplicationStatus.bind(this);
+  }
   async createApplication(
     req: MulterRequest,
     res: Response,
@@ -551,7 +552,7 @@ class DriverController extends BaseController {
         // Create new user account
         userAccount = await User.create({
           email: driver.emailAddress,
-          password: generatedPassword, 
+          password: generatedPassword,
           firstName: driver.fullName.split(" ")[0],
           lastName: driver.fullName.split(" ").slice(1).join(" "),
           role: "driver",
@@ -560,22 +561,7 @@ class DriverController extends BaseController {
 
         // Update driver with user reference
         driver.userId = userAccount._id as Types.ObjectId;
-      }
 
-      // Update driver status
-      driver.applicationStatus.status = status;
-      driver.applicationStatus.isApproved = status === "approved";
-      driver.applicationStatus.comments =
-        status === "approved"
-          ? "Application approved"
-          : status === "rejected"
-          ? "Application rejected"
-          : driver.applicationStatus.comments;
-
-      await driver.save();
-
-      // Send appropriate email notification
-      if (status === "approved") {
         // Send credentials email
         await sendEmail({
           to: driver.emailAddress,
@@ -593,23 +579,21 @@ Please log in and change your password immediately for security purposes.
 
 Best regards,
 The Team
-          `,
-        });
-      } else if (status === "rejected") {
-        // Send rejection email
-        await sendEmail({
-          to: driver.emailAddress,
-          subject: "Driver Application Status Update",
-          text: `
-Dear ${driver.fullName},
-
-We regret to inform you that your driver application has been rejected.
-
-Best regards,
-The Team
-          `,
+          `
         });
       }
+
+      // Update driver status
+      driver.applicationStatus.status = status;
+      driver.applicationStatus.isApproved = status === "approved";
+      driver.applicationStatus.comments =
+        status === "approved"
+          ? "Application approved"
+          : status === "rejected"
+          ? "Application rejected"
+          : driver.applicationStatus.comments;
+
+      await driver.save();
 
       this.sendResponse(
         res,
