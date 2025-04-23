@@ -73,9 +73,9 @@ class DriverController extends BaseController {
         Object.keys(files).forEach((fieldName) => {
           const file = files[fieldName][0];
           if (file) {
-            // Store the relative path in the documents object
-            const relativePath = path.relative(process.cwd(), file.path);
-            documents[fieldName] = `http://localhost:4000${relativePath}`;
+            // Map the field names to match schema
+            const schemaFieldName = fieldName.replace('documents[', '').replace(']', '');
+            documents[schemaFieldName] = `/uploads/${file.filename}`;
           }
         });
       }
