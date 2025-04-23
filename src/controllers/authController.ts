@@ -70,18 +70,18 @@ class AuthController extends BaseController {
             const { email, password } = req.body;
 
             // Find driver by email
-            const driver = await Driver.findOne({ email });
+            const driver = await Driver.findOne({ emailAddress: email });
             if (!driver) {
                 throw new BaseError('Invalid credentials', 401);
             }
 
             // Check if driver is approved
-            if (driver.applicationStatus !== 'approved') {
+            if (driver.applicationStatus.status !== 'approved' || !driver.applicationStatus.isApproved) {
                 throw new BaseError('Your application is not yet approved', 403);
             }
 
             // Find associated user account
-            const user = await User.findOne({ email });
+            const user = await User.findOne({ email: driver.emailAddress });
             if (!user) {
                 throw new BaseError('User account not found', 401);
             }
@@ -111,9 +111,9 @@ class AuthController extends BaseController {
                 token,
                 driver: {
                     _id: driver._id,
-                    name: driver.name,
-                    email: driver.email,
-                    phone: driver.phone,
+                    fullName: driver.fullName,
+                    email: driver.emailAddress,
+                    phoneNumber: driver.phoneNumber,
                     applicationStatus: driver.applicationStatus
                 }
             });
