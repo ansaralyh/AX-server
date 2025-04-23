@@ -7,6 +7,13 @@ import { upload } from "../middleware/fileUpload";
 
 const router = express.Router();
 
+
+router.get(
+  '/:id',
+  isAuthenticated as RequestHandler,
+  authorizeRoles('admin', 'super-admin') as RequestHandler,
+  driverController.getDriverById as RequestHandler
+);
 // Public routes
 router.post(
   "/apply",
@@ -96,11 +103,13 @@ router.get(
   driverController.getAllDrivers as RequestHandler
 );
 
-router.get(
-  '/drivers/:id',
-  isAuthenticated as RequestHandler,
-  authorizeRoles('admin', 'super-admin') as RequestHandler,
-  driverController.getDriverById as RequestHandler
-);
+// router.get(
+//   '/drivers/user/:userId',
+//   isAuthenticated as RequestHandler,
+//   authorizeRoles('admin', 'super-admin') as RequestHandler,
+//   driverController.getDriverByUserId as RequestHandler
+// );
+
+
 
 export default router;

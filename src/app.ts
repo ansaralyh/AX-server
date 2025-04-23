@@ -6,6 +6,8 @@ import bodyParser from "body-parser";
 import indexRoutes from './routes/indexRoutes'
 import cors from 'cors';
 import cookieParser from "cookie-parser";
+import morgan from "morgan";
+import path from "path";
 
 //Dotenv configuration
 dotenv.config();
@@ -27,6 +29,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json())
 app.use(cookieParser());
+app.use(morgan("dev"));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Security headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');

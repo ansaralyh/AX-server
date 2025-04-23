@@ -25,11 +25,8 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
 
         const decoded = jwt.verify(token, config.jwtSecret) as { id: string; role: string };
         
-        if (decoded.role === 'driver') {
-            req.user = await Driver.findById(decoded.id);
-        } else {
-            req.user = await User.findById(decoded.id);
-        }
+    
+        req.user = await User.findById(decoded.id);
 
         if (!req.user) {
             throw new BaseError('User not found', 401);

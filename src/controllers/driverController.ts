@@ -54,6 +54,7 @@ class DriverController extends BaseController {
     this.changeApplicationStatus = this.changeApplicationStatus.bind(this);
     this.getAllDrivers = this.getAllDrivers.bind(this);
     this.getDriverById = this.getDriverById.bind(this);
+    this.getDriverByUserId = this.getDriverByUserId.bind(this);
   }
   async createApplication(
     req: MulterRequest,
@@ -74,7 +75,7 @@ class DriverController extends BaseController {
           if (file) {
             // Store the relative path in the documents object
             const relativePath = path.relative(process.cwd(), file.path);
-            documents[fieldName] = relativePath;
+            documents[fieldName] = `http://localhost:4000${relativePath}`;
           }
         });
       }
@@ -692,7 +693,7 @@ The Team
       const drivers = await Driver.find(query)
         .skip((options.page - 1) * options.limit)
         .limit(options.limit)
-        .select('-password -documents -signature')
+        .select('-password  -signature')
         .populate('userId', 'email role');
 
       const total = await Driver.countDocuments(query);
@@ -724,20 +725,44 @@ The Team
         return;
       }
 
-      // First try to find driver by ID
-      let driver = await Driver.findById(id)
-        .select('-password -documents -signature')
-        .populate('userId', 'email role');
 
       // If not found by ID, try to find by userId
-      if (!driver) {
-        driver = await Driver.findOne({ userId: id })
+     
+       let driver = await Driver.findOne({ userId: id })
           .select('-password -documents -signature')
           .populate('userId', 'email role');
-      }
+      
 
       if (!driver) {
         this.sendError(res, 404, 'Driver not found');
+        return;
+      }
+
+      this.sendResponse(res, 200, true, 'Driver retrieved successfully', driver);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getDriverByUserId(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { userId } = req.params;
+
+      if (!Types.ObjectId.isValid(userId)) {
+        this.sendError(res, 400, 'Invalid user ID format');
+        return;
+      }
+
+      const driver = await Driver.findOne({ userId })
+        .select('-password -documents -signature')
+        .populate('userId', 'email role');
+
+      if (!driver) {
+        this.sendError(res, 404, 'Driver not found for this user');
         return;
       }
 
