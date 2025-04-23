@@ -438,6 +438,7 @@ class DriverController extends BaseController {
       await driver.save();
 
       // Send approval email with credentials
+      /*
       await sendEmail({
         to: driver.emailAddress,
         subject: "Driver Application Approved - Your Login Credentials",
@@ -454,8 +455,9 @@ Please log in and change your password immediately for security purposes.
 
 Best regards,
 The Team
-        `,
+        `
       });
+      */
 
       this.sendResponse(
         res,
@@ -499,6 +501,7 @@ The Team
       await driver.save();
 
       // Send rejection email
+      /*
       await sendEmail({
         to: driver.emailAddress,
         subject: "Driver Application Rejected",
@@ -513,8 +516,9 @@ If you have any questions, please feel free to contact us.
 
 Best regards,
 The Team
-        `,
+        `
       });
+      */
 
       this.sendResponse(
         res,
@@ -538,6 +542,7 @@ The Team
       const randomIndex = Math.floor(Math.random() * charset.length);
       password += charset[randomIndex];
     }
+    console.log("password", password)
     return password;
   }
 
