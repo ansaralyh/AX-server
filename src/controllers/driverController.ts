@@ -725,7 +725,7 @@ The Team
       }
 
       const driver = await Driver.findById(id)
-        .select('-password -documents -signature')
+        .select('-password  -signature')
         .populate('userId', 'email role');
 
       if (!driver) {
