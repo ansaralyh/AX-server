@@ -58,18 +58,7 @@ const shiftSchema = new Schema({
         required: true,
         index: true
     },
-    breaks: [breakSchema],
-    currentBreak: {
-        type: breakSchema,
-        default: null
-    },
-    cancellationReason: {
-        type: String
-    },
-    totalBreakTime: {
-        type: Number,
-        default: 0
-    }
+
 }, {
     timestamps: true
 });

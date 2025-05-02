@@ -54,7 +54,11 @@ process.on("uncaughtException", (err) => {
   console.error(`Shutting down the server due to uncaught exception`);
   process.exit(1);
 });
-
+app.use("/test",(req,res)=>{
+  res.status(200).json({
+    messege:"Aoi is workin fine"
+  })
+})
 // Establishing the server
 const server = app.listen(process.env.PORT, () => {
   console.log(`Server listening to PORT ${process.env.PORT}`);
