@@ -56,7 +56,7 @@ process.on("uncaughtException", (err) => {
 });
 app.use("/test",(req,res)=>{
   res.status(200).json({
-    messege:"Aoi is workin fine"
+    messege:"Api is workin fine"
   })
 })
 // Establishing the server
